@@ -1,7 +1,7 @@
 # Cloud Provisioning Scratches
 
 * Create a basic AWS topology: 
-    * ASG
+    * ELB
     * SG
     * EC2 instance from image
     * Output
