@@ -27,8 +27,6 @@ t.add_mapping("RegionMap", {
     "us-west-1": {"AMI": "ami-951945d0"}
 })
 
-# TODO: Not being added to the VPC? EC2 instance creation fails saying the SG isn't part
-#       of the VPC? ...
 frontend_ec2_sg = t.add_resource(ec2.SecurityGroup(
     "rzienertHttpSecurityGroup",
     VpcId=Ref(vpcid_param),
@@ -46,13 +44,14 @@ frontend_ec2_sg = t.add_resource(ec2.SecurityGroup(
 ec2_instance = t.add_resource(ec2.Instance(
     "rzienertEC2Instance",
     ImageId=FindInMap("RegionMap", Ref("AWS::Region"), "AMI"),
-    SecurityGroups=[Ref(frontend_ec2_sg)],
+    InstanceType="t1.micro",
+    SubnetId=Ref(subnetid_param),
+    UserData=Base64("80"),
     Tags=Tags(Name="rzienertVpcInstance")
 ))
 
 elb = t.add_resource(elb.LoadBalancer(
     "rzienertLoadBalancer",
-    AvailabilityZones=GetAZs(""),
     ConnectionDrainingPolicy=elb.ConnectionDrainingPolicy(
         Enabled=True,
         Timeout=300
@@ -72,21 +71,14 @@ elb = t.add_resource(elb.LoadBalancer(
         UnhealthyThreshold="5",
         Interval="30",
         Timeout="5"
-    )
+    ),
+    Subnets=[Ref(subnetid_param)]
 ))
 
 t.add_output([
     Output(
         "InstanceId",
         Value=Ref(ec2_instance)
-    ),
-    Output(
-        "AZ",
-        Value=GetAtt(ec2_instance, "AvailabilityZone")
-    ),
-    Output(
-        "PublicIP",
-        Value=GetAtt(ec2_instance, "PublicIp")
     ),
     Output(
         "PrivateIP",
